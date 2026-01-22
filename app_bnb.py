@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # Konfigurimi i faqes me ikonë hoteli
 st.set_page_config(page_title="BNB.FUSHEKOSOVA | Prestige", layout="wide", page_icon="🏨")
 
-# --- DIZAJNI "ULTRA MODERN 2026" ---
+# --- DIZAJNI "ULTRA MODERN 2026" - RREGULLUAR PËR TEL ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap');
@@ -14,6 +14,19 @@ st.markdown("""
     * { font-family: 'Outfit', sans-serif; }
     .stApp { background-color: #030303; }
     
+    /* KODI SPECIAL PËR TELEFON (Mobile Responsive) */
+    @media (max-width: 768px) {
+        .hero-container { padding: 40px 10px !important; border-radius: 20px !important; }
+        .hero-container h1 { font-size: 30px !important; }
+        .hero-container p { font-size: 14px !important; }
+        
+        /* I bën fotot dhe tekstin e apartamenteve të dalin njëra nën tjetrën në tel */
+        .apt-card-content { flex-direction: column !important; gap: 15px !important; text-align: center !important; }
+        .apt-card img { width: 100% !important; height: 180px !important; }
+        .apt-card div { text-align: center !important; }
+        .price-tag { font-size: 24px !important; }
+    }
+
     /* Headeri Kryesor */
     .hero-container {
         background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
@@ -64,6 +77,7 @@ st.markdown("""
         height: 55px;
         border: none;
         transition: 0.3s;
+        width: 100%; /* I bën butonat më të lehtë për t'u shtypur në tel */
     }
     </style>
 
@@ -88,6 +102,7 @@ apartamentet = {
 tab1, tab2 = st.tabs(["💎 DISPONUESHMËRIA", "📈 RAPORTET FINANCIARE"])
 
 with tab1:
+    # Në PC i mban 1.6 me 1, në telefon Streamlit automatikisht i vendos njëra nën tjetrën
     col_l, col_r = st.columns([1.6, 1])
     
     with col_l:
@@ -95,12 +110,12 @@ with tab1:
         for emri, info in apartamentet.items():
             st.markdown(f"""
             <div class="apt-card">
-                <div style="display: flex; align-items: center; gap: 25px;">
+                <div class="apt-card-content" style="display: flex; align-items: center; gap: 25px;">
                     <img src="{info['img']}" style="width:180px; height:120px; border-radius:20px; object-fit:cover;">
                     <div style="flex-grow:1;">
                         <span class="status-badge">E Lirë Sot</span>
                         <h2 style="color:white; margin:10px 0 5px 0;">{emri}</h2>
-                        <p style="color:#888; margin:0;">📶 Free WiFi • 🅿️ Parking • 🧼 Pastrim i garantuar</p>
+                        <p style="color:#888; margin:0;">📶 WiFi • 🅿️ Parking • 🧼 Pastrim</p>
                     </div>
                     <div style="text-align:right;">
                         <div class="price-tag">{info['cmimi']}€</div>
@@ -134,24 +149,18 @@ with tab1:
             """, unsafe_allow_html=True)
             
             if st.button("KONFIRMO DHE KRIJO FATURËN"):
-                # Ruajtja në Excel/CSV
                 e_re = pd.DataFrame([[datetime.now().strftime("%d/%m/%Y"), emri_klientit, apt_sel, netet, total]], 
                                     columns=["Data", "Klienti", "Apartamenti", "Netë", "Totali"])
                 e_re.to_csv(DATABASE, mode='a', header=False, index=False)
-                
                 st.balloons()
-                st.success("Rezervimi u ruajt në arkivë!")
-                
-                # Fatura vizuale
+                st.success("Rezervimi u ruajt!")
                 st.markdown(f"""
                 <div style="background:white; color:black; padding:20px; border-radius:10px; margin-top:20px; font-family:monospace;">
                     <center><b>BNB.FUSHEKOSOVA RECEIPT</b><br>---</center>
                     Klienti: {emri_klientit}<br>
                     Apt: {apt_sel}<br>
-                    Qëndrimi: {netet} netë<br>
                     <b>TOTALI: {total}€</b><br>
-                    ---<br>
-                    Faleminderit që na zgjodhët!
+                    ---
                 </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -160,11 +169,9 @@ with tab2:
     st.markdown("<h3 style='color:white;'>Analiza Financiare</h3>", unsafe_allow_html=True)
     df = pd.read_csv(DATABASE)
     if not df.empty:
+        # Përdorim container për t'i bërë metrikat të duken mirë në tel
         m1, m2, m3 = st.columns(3)
         m1.metric("Fitimi Total", f"{df['Totali'].sum()} €")
-        m2.metric("Rezervime Totale", len(df))
-        m3.metric("Netë të Shitura", df['Netë'].sum())
-        
+        m2.metric("Rezervime", len(df))
+        m3.metric("Netë", df['Netë'].sum())
         st.dataframe(df.sort_index(ascending=False), use_container_width=True)
-    else:
-        st.info("Nuk ka të dhëna në arkivë.")
